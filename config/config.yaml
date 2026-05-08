@@ -1,0 +1,21 @@
+# GUS mapping workflow (metagenome contigs -> Prodigal -> DIAMOND vs paper GUS set)
+
+sample: "SRR10692699_50M_seed11"
+assembly_dir: "assembly/SRR10692699_50M_seed11"
+contigs_basename: "final.contigs.fa"
+
+reference_pdf: "reference_from_paper/279_gus_seq.pdf"
+expected_gus_records: 279
+
+min_contig_length: 1000
+threads_diamond: 8
+
+diamond:
+  evalue: 1.0e-5
+  max_target_seqs: 25
+
+summarize:
+  min_identity: 40.0
+  min_query_cov: 0.5
+  min_subject_cov: 0.5
+  max_evalue: 1.0e-5

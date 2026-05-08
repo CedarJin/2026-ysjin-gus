@@ -1,0 +1,45 @@
+# --- large / reproducible data (do not commit) ---
+assembly/
+results/
+results_old/
+result_old/
+logs/
+
+# local conda env (hundreds of MB–GB; recreate from environment.yml)
+envs/
+
+# snakemake working metadata
+.snakemake/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- notebooks ---
+.ipynb_checkpoints/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# --- HPC / job outputs at repo root (if you add later) ---
+slurm-*.out
+*.sbatch.e*
+*.sbatch.o*
+
+# --- optional: paper supplements can be large; uncomment if needed ---
+# reference_from_paper/*.pdf
+# reference_from_paper/*.docx

@@ -1,0 +1,12 @@
+name: gus-map
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.10
+  - pypdf
+  - prodigal
+  - diamond
+  - blast
+  - taxonkit
+  - snakemake>=8.0
