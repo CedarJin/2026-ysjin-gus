@@ -10,3 +10,5 @@ dependencies:
   - blast
   - taxonkit
   - snakemake>=8.0
+  - sra-tools>=3.0
+  - pigz

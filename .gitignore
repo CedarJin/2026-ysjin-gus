@@ -4,6 +4,12 @@ results/
 results_old/
 result_old/
 logs/
+rawdata/
+qc/
+cleandata/
+trimmed_data/
+reference/
+
 
 # local conda env (hundreds of MB–GB; recreate from environment.yml)
 envs/
