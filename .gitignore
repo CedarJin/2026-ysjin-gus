@@ -49,3 +49,5 @@ slurm-*.out
 # --- optional: paper supplements can be large; uncomment if needed ---
 # reference_from_paper/*.pdf
 # reference_from_paper/*.docx
+
+.cache/
