@@ -5,7 +5,9 @@ assembly_dir: "assembly/SRR10692699_50M_seed11"
 contigs_basename: "final.contigs.fa"
 
 reference_pdf: "reference_from_paper/279_gus_seq.pdf"
+reference_fmn_xlsx: "reference_from_paper/Supplemental_Table_2.xlsx"
 expected_gus_records: 279
+reference_db_name: "gus_279_plus_fmn"
 
 min_contig_length: 1000
 threads_diamond: 8
