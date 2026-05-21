@@ -34,18 +34,20 @@ rule all:
 
 rule extract_gus_reference:
     input:
-        pdf=config["reference_pdf"],
+        paper_fasta="results/reference/gus_279.faa",
+        fmn_xlsx=config["reference_fmn_xlsx"],
     output:
-        fasta="results/reference/gus_279.faa",
-        metadata="results/reference/gus_279_metadata.tsv",
+        fasta="results/reference/gus_279_plus_fmn.faa",
+        metadata="results/reference/gus_279_plus_fmn_metadata.tsv",
     params:
         expected=config["expected_gus_records"],
     log:
         "logs/extract_gus_reference.log",
     shell:
         """
-        python scripts/extract_gus_reference.py \
-            --input {input.pdf} \
+        python3 scripts/build_gus_database.py \
+            --paper-fasta {input.paper_fasta} \
+            --fmn-xlsx {input.fmn_xlsx} \
             --fasta {output.fasta} \
             --metadata {output.metadata} \
             --expected-count {params.expected} \
@@ -65,7 +67,7 @@ rule filter_contigs:
         "logs/filter_{sample}_min{minlen}.log",
     shell:
         """
-        python scripts/filter_contigs_by_length.py \
+        python3 scripts/filter_contigs_by_length.py \
             --input {input.contigs} \
             --output {output} \
             --min-length {wildcards.minlen} \
@@ -92,25 +94,25 @@ rule prodigal:
 
 rule diamond_makedb:
     input:
-        "results/reference/gus_279.faa",
+        "results/reference/gus_279_plus_fmn.faa",
     output:
-        "results/reference/gus_279.dmnd",
+        "results/reference/gus_279_plus_fmn.dmnd",
     log:
         "logs/diamond_makedb.log",
     shell:
         """
-        diamond makedb --in {input} --db results/reference/gus_279 > {log} 2>&1
+        diamond makedb --in {input} --db results/reference/gus_279_plus_fmn > {log} 2>&1
         """
 
 
 rule diamond_blastp:
     input:
         query="results/prodigal/{sample}.min{minlen}.faa",
-        db="results/reference/gus_279.dmnd",
+        db="results/reference/gus_279_plus_fmn.dmnd",
     output:
         "results/search/{sample}.min{minlen}.predicted_proteins_vs_gus.tsv",
     params:
-        db_prefix="results/reference/gus_279",
+        db_prefix="results/reference/gus_279_plus_fmn",
         evalue=config["diamond"]["evalue"],
         max_target=config["diamond"]["max_target_seqs"],
     threads: int(config["threads_diamond"])
@@ -134,7 +136,7 @@ rule summarize_gus_hits:
     input:
         hits="results/search/{sample}.min{minlen}.predicted_proteins_vs_gus.tsv",
         contigs="results/filtered_contigs/{sample}.min{minlen}.fa",
-        metadata="results/reference/gus_279_metadata.tsv",
+        metadata="results/reference/gus_279_plus_fmn_metadata.tsv",
     output:
         best="results/summary/{sample}.min{minlen}.gus_best_hits.tsv",
         clade="results/summary/{sample}.min{minlen}.gus_clade_abundance.tsv",
@@ -147,7 +149,7 @@ rule summarize_gus_hits:
         "logs/summarize_{sample}_min{minlen}.log",
     shell:
         """
-        python scripts/summarize_gus_hits.py \
+        python3 scripts/summarize_gus_hits.py \
             --hits {input.hits} \
             --contigs {input.contigs} \
             --metadata {input.metadata} \
