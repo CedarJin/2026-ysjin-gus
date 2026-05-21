@@ -1,0 +1,26 @@
+read_dir: "cleandata"
+results_dir: "results"
+assembly_dir: "assembly/megahit"
+contigs_basename: "final.contigs.fa"
+min_contig_length: 1000
+threads: 8
+threads_bowtie2: 8
+threads_featurecounts: 8
+threads_prodigal: 8
+threads_diamond: 8
+
+diamond:
+  evalue: 1.0e-5
+  max_target_seqs: 25
+
+# Default snakemake summarize filters (scripts/summarize_gus_hits.py).
+summarize:
+  min_identity: 40.0
+  min_query_cov: 0.5
+  min_subject_cov: 0.5
+  max_evalue: 1.0e-5
+
+# Alternate filters via scripts/regenerate_gus_abundance_pident.sh:
+#   results/summary/pident90/       (identity >= 90%, cov >= 50%)
+#   results/summary/pident95/       (identity >= 95%, cov >= 50%)
+#   results/summary/pident95_cov90/ (identity >= 95%, cov >= 90%)
