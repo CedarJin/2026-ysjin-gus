@@ -244,7 +244,7 @@ cleandata/                  host-removed reads (gitignored)
 
 Large inputs and results (`rawdata/`, `cleandata/`, `assembly/`, `results/`, `envs/`) are gitignored and are recreated from the workflows above.
 
-References:
+## References:
 
 Pollet RM, D'Agostino EH, Walton WG, Xu Y, Little MS, Biernat KA, Pellock SJ, Patterson LM, Creekmore BC, Isenberg HN, Bahethi RR, Bhatt AP, Liu J, Gharaibeh RZ, Redinbo MR. An Atlas of β-Glucuronidases in the Human Intestinal Microbiome. Structure. 2017 Jul 5;25(7):967-977.e5. doi: 10.1016/j.str.2017.05.003.
 
