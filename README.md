@@ -110,36 +110,36 @@ Do not use the DIAMOND query length (`qlen`, amino acids) for this metric. `qlen
 
 ### 3. Reads per kilobase (RPK)
 
-For every CDS \(g\) with `raw_count > 0` and a GFF length:
+For every CDS *g* with `raw_count > 0` and a GFF length:
 
-\[
-\mathrm{RPK}_g = \frac{\mathrm{count}_g}{\mathrm{cds\_length\_bp}_g / 1000}
-\]
+```math
+\mathrm{RPK}_{g} = \frac{\mathrm{count}_{g}}{\mathrm{cds\_length\_bp}_{g} / 1000}
+```
 
 Genes with zero counts are omitted from the sum. Genes present in counts but missing from the GFF are omitted.
 
 ### 4. Genome-wide denominator
 
-\[
-\mathrm{RPK}_{\mathrm{genome}} = \sum_{g \in \text{all CDS with count}>0} \mathrm{RPK}_g
-\]
+```math
+\mathrm{RPK}_{\mathrm{genome}} = \sum_{g \in \text{all CDS with count}>0} \mathrm{RPK}_{g}
+```
 
-This sum is over the **entire predicted gene catalog of the sample**, not over GUS hits. In a given sample, \(\sum \mathrm{tpm\_genome\_wide}\) over *all* genes would be \(10^6\). The GUS rows are only a small slice of that million.
+This sum is over the **entire predicted gene catalog of the sample**, not over GUS hits. In a given sample, the sum of `tpm_genome_wide` over *all* genes would be 10<sup>6</sup>. The GUS rows are only a small slice of that million.
 
 ### 5. TPM for a GUS gene
 
 For a predicted gene that passed the GUS hit filters:
 
-\[
+```math
 \mathrm{tpm\_genome\_wide} = \frac{\mathrm{RPK}_{\mathrm{GUS\ gene}}}{\mathrm{RPK}_{\mathrm{genome}}} \times 10^{6}
-\]
+```
 
 Worked numbers (same operations as the code):
 
 1. Count = 6461 fragments, CDS = 2628 bp  
-   \(\mathrm{RPK} = 6461 / (2628 / 1000) = 2458.52\)
-2. Suppose \(\mathrm{RPK}_{\mathrm{genome}} = 6.63 \times 10^{7}\)
-3. \(\mathrm{TPM} = 2458.52 / 6.63\times10^{7} \times 10^{6} \approx 37.09\)
+   RPK = 6461 / (2628 / 1000) = 2458.52
+2. Suppose RPK<sub>genome</sub> = 6.63 × 10<sup>7</sup>
+3. TPM = 2458.52 / 6.63×10<sup>7</sup> × 10<sup>6</sup> ≈ 37.09
 
 That gene is about 37 of every million length-normalized gene counts in the sample.
 
@@ -160,11 +160,11 @@ Clade tables sum those reference TPMs by clade (`results/reference/active_gus_me
 
 ### 7. Percent of genome
 
-Because TPM already scales to \(10^6\):
+Because TPM already scales to 10<sup>6</sup>:
 
-\[
+```math
 \text{percent of genome} = \mathrm{tpm\_genome\_wide} / 10{,}000
-\]
+```
 
 Example: TPM 37.086331 → 0.003709% of genome-wide gene abundance. Files named `*_of_genome_percent_all_subject.tsv` are this conversion.
 
@@ -173,7 +173,7 @@ Example: TPM 37.086331 → 0.003709% of genome-wide gene abundance. Files named 
 | Metric | Length | Denominator | Interprets as |
 | --- | --- | --- | --- |
 | **`tpm_genome_wide`** | CDS bp (GFF) | RPK of **all** CDS in the sample | Abundance among all genes |
-| **`tpm_gus_db`** | protein `qlen` (AA) | RPK of **GUS hits only** in that table | Composition within the GUS set (sums to \(10^6\) among hits) |
+| **`tpm_gus_db`** | protein `qlen` (AA) | RPK of **GUS hits only** in that table | Composition within the GUS set (sums to 10<sup>6</sup> among hits) |
 | **`cpm`** | none | total fragment counts | Counts per million fragments, not length-normalized |
 | **`rpk` in the TSV** | `qlen` / 1000 | none | Intermediate for `tpm_gus_db`, not for genome-wide TPM |
 
