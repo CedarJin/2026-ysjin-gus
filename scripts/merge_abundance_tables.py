@@ -98,6 +98,24 @@ def main() -> None:
             "candidate_gus_abundance.tsv",
             "tpm_genome_wide",
         ),
+        (
+            "active_gus_abundance_within_gus_db_percent_all_subject.tsv",
+            "active_gus_abundance.tsv",
+            "tpm_gus_db",
+        ),
+        (
+            "active_gus_abundance_of_genome_percent_all_subject.tsv",
+            "active_gus_abundance.tsv",
+            "tpm_genome_wide",
+        ),
+    ]
+
+    tpm_outputs = [
+        (
+            "active_gus_abundance_gus_genome_all_subject.tsv",
+            "active_gus_abundance.tsv",
+            "tpm_genome_wide",
+        ),
     ]
 
     for output_name, suffix, value_col in outputs:
@@ -106,6 +124,12 @@ def main() -> None:
             matrix = to_relative_abundance_percent_within_subset(matrix)
         else:
             matrix = to_relative_abundance_percent_of_genome(matrix)
+        output_path = args.output_dir / output_name
+        matrix.to_csv(output_path, sep="\t", float_format="%.6f")
+        print(f"Wrote {output_path} with shape {matrix.shape}")
+
+    for output_name, suffix, value_col in tpm_outputs:
+        matrix = build_matrix(args.input_dir, suffix, value_col)
         output_path = args.output_dir / output_name
         matrix.to_csv(output_path, sep="\t", float_format="%.6f")
         print(f"Wrote {output_path} with shape {matrix.shape}")

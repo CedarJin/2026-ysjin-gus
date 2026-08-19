@@ -119,7 +119,7 @@ def main() -> None:
 
     rows = load_best_hits(args.hits)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    fields = list(rows[0].keys()) + [
+    abundance_fields = [
         "featurecounts_gene_id",
         "cds_length_bp",
         "raw_count",
@@ -130,9 +130,18 @@ def main() -> None:
         "tpm_gus_db",
         "tpm_genome_wide",
     ]
+    if rows:
+        fields = list(rows[0].keys()) + abundance_fields
+    else:
+        # Header-only hits file (no GUS passed filters): still emit a valid empty table.
+        with args.hits.open() as handle:
+            hit_fields = csv.DictReader(handle, delimiter="\t").fieldnames or []
+        fields = list(hit_fields) + abundance_fields
     with args.output.open("w") as handle:
         writer = csv.DictWriter(handle, delimiter="\t", fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
+        if not rows:
+            return
         gus_rpk_values: list[float] = []
         enriched: list[dict[str, str | int | float]] = []
         for row in rows:

@@ -648,11 +648,12 @@ def make_stacked_bar_svg(
     subtitle: str | None = None,
     y_label: str = "Abundance (% of GUS database)",
     legend_title: str = "Clade",
+    right: int = 35,
+    legend_x: float | None = None,
 ) -> str:
     subjects = list(table.index)
     categories = list(table.columns)
     left = 70
-    right = 35
     top = 84
     bottom = 92
     plot_w = width - left - right
@@ -705,7 +706,8 @@ def make_stacked_bar_svg(
             f'<text x="{x0 + bar_w/2:.2f}" y="{top + plot_h + 18}" text-anchor="end" font-size="10" fill="{AXIS}" transform="rotate(-45 {x0 + bar_w/2:.2f},{top + plot_h + 18})">{html.escape(subject)}</text>'
         )
     # legend
-    legend_x = width - 150
+    if legend_x is None:
+        legend_x = width - 150
     legend_y = top
     parts.append(f'<g transform="translate({legend_x},{legend_y})">')
     parts.append(
@@ -1019,6 +1021,15 @@ def build_report(args: argparse.Namespace) -> None:
     total_meta = load_metadata(args.total_meta)
     candidate_meta = load_metadata(args.candidate_meta)
 
+    # Optional active GUS set (first 11 of Table S3). When its merged tables and
+    # metadata are present we emit active-only versions of figures 3, 4 and 6.
+    active_within_path = args.abundance_dir / "active_gus_abundance_within_gus_db_percent_all_subject.tsv"
+    active_within = None
+    active_meta = None
+    if active_within_path.exists() and args.active_meta.exists():
+        active_within = load_matrix(active_within_path)
+        active_meta = load_metadata(args.active_meta)
+
     # subject summaries
     subjects = subject_burden_table(total_of_genome, candidate_of_genome, total_within, candidate_within)
     write_tsv(tables_dir / "subject_burden.tsv", subjects)
@@ -1179,6 +1190,140 @@ def build_report(args: argparse.Namespace) -> None:
     )
     write_svg(figures_dir / "figure6_clade_taxonomy_composition.svg", clade_tax_svg)
 
+    # ---- active GUS (first 11 of Table S3): parallel figures 3/4/6 ----
+    active_figures: list[tuple[str, str]] = []
+    if active_within is not None and active_meta is not None:
+        active_clade_counts, active_clade_percent = clade_abundance_tables(
+            active_within, active_meta
+        )
+        write_tsv(
+            tables_dir / "active_clade_abundance_within_gus_db_percent.tsv",
+            active_clade_percent.reset_index(),
+        )
+
+        active_box_svg = make_boxplot_svg(
+            active_clade_percent.reindex(subject_order),
+            {s: f"hsl({int(360 * i / max(len(subject_order),1))},65%,50%)" for i, s in enumerate(subject_order)},
+            1540,
+            760,
+            "Clade abundance distribution (active GUS)",
+            "Active GUS = first 11 of Table S3. Boxplots across subjects; points colored by subject.",
+        )
+        write_svg(figures_dir / "figure3_clade_abundance_boxplot_active.svg", active_box_svg)
+
+        active_stacked_svg = make_stacked_bar_svg(
+            active_clade_percent.reindex(subject_order),
+            CLADE_COLORS,
+            1540,
+            760,
+            "Subject-by-subject clade composition (active GUS)",
+            "Active GUS within-database percent; bars sum to 100 for each subject.",
+            right=170,
+            legend_x=1540 - 150,
+        )
+        write_svg(figures_dir / "figure4_clade_stacked_bars_active.svg", active_stacked_svg)
+
+        active_meta_indexed = active_meta.set_index("reference_id").loc[active_within.index].copy()
+        active_mean_abundance = active_within.mean(axis=1)
+        active_tax_labels = active_meta_indexed["taxon_label"].tolist()
+        active_collapsed, _ = collapse_taxonomy_labels(active_tax_labels, top_n=9)
+        active_meta_indexed["taxon_collapsed"] = active_collapsed
+        active_clade_tax_weight = (
+            pd.DataFrame(
+                {
+                    "clade": active_meta_indexed["clade_std"].tolist(),
+                    "taxon": active_meta_indexed["taxon_collapsed"].tolist(),
+                    "weight": active_mean_abundance.values,
+                }
+            )
+            .groupby(["clade", "taxon"], as_index=False)["weight"]
+            .sum()
+        )
+        active_clade_tax_weight["pct"] = active_clade_tax_weight.groupby("clade")["weight"].transform(
+            lambda x: x / x.sum() * 100.0 if x.sum() else 0.0
+        )
+        active_clade_tax_table = active_clade_tax_weight.pivot(
+            index="clade", columns="taxon", values="pct"
+        ).fillna(0.0)
+        active_clade_tax_table = active_clade_tax_table.reindex(
+            [c for c in STANDARD_CLADE_ORDER if c in active_clade_tax_table.index], fill_value=0.0
+        )
+        active_tax_sorted = [c for c in active_clade_tax_table.columns if c != "Other"] + (
+            ["Other"] if "Other" in active_clade_tax_table.columns else []
+        )
+        active_clade_tax_table = active_clade_tax_table.reindex(columns=active_tax_sorted, fill_value=0.0)
+        active_tax_colors = {lab: f"hsl({int(360 * i / max(len(active_tax_sorted),1))},60%,52%)" for i, lab in enumerate(active_tax_sorted)}
+        active_tax_colors["Other"] = "#999999"
+        active_tax_colors["unclear"] = "#666666"
+        active_clade_tax_svg = make_stacked_taxonomy_svg(
+            active_clade_tax_table,
+            active_tax_colors,
+            1540,
+            860,
+            "Abundance-weighted taxonomy composition by clade (active GUS)",
+            "Active GUS (first 11 of Table S3). Each clade is a 100% stacked bar.",
+        )
+        write_svg(figures_dir / "figure6_clade_taxonomy_composition_active.svg", active_clade_tax_svg)
+
+        # Per-subject stacked bars of the individual active GUS proteins
+        # (11 references), each subject summing to 100% within the active set.
+        active_meta_map = active_meta.set_index("reference_id")
+        active_ref_mean = active_within.mean(axis=1)
+
+        def active_ref_sort_key(rid: str) -> tuple[int, float]:
+            clade = clean_str(active_meta_map.loc[rid, "clade_std"])
+            clade_rank = STANDARD_CLADE_ORDER.index(clade) if clade in STANDARD_CLADE_ORDER else 99
+            return (clade_rank, -float(active_ref_mean.get(rid, 0.0)))
+
+        # Include all 11 active references (undetected ones stay at 0 but remain
+        # in the legend), ordered by clade then mean abundance.
+        active_all_ids = list(active_meta_map.index)
+        active_ref_order = sorted(active_all_ids, key=active_ref_sort_key)
+        active_ref_labels = [
+            clean_str(active_meta_map.loc[rid, "source"])
+            for rid in active_ref_order
+        ]
+        active_composition = (
+            active_within.reindex(active_ref_order).T.reindex(subject_order).fillna(0.0)
+        )
+        active_composition.columns = active_ref_labels
+        active_ref_colors = {
+            lab: f"hsl({int(360 * i / max(len(active_ref_labels), 1))},62%,52%)"
+            for i, lab in enumerate(active_ref_labels)
+        }
+        active_composition_svg = make_stacked_bar_svg(
+            active_composition,
+            active_ref_colors,
+            1540,
+            760,
+            "Active GUS composition per subject",
+            "Each bar sums to 100% across the 11 active GUS proteins (first 11 of Table S3).",
+            y_label="Abundance (% of active GUS set)",
+            legend_title="Active GUS",
+            right=280,
+            legend_x=1540 - 268,
+        )
+        write_svg(figures_dir / "figure4b_active_gus_composition.svg", active_composition_svg)
+
+        active_figures = [
+            (
+                "figure3_clade_abundance_boxplot_active.svg",
+                "Active GUS clade abundance distribution across subjects.",
+            ),
+            (
+                "figure4_clade_stacked_bars_active.svg",
+                "Active GUS subject-by-subject clade composition.",
+            ),
+            (
+                "figure4b_active_gus_composition.svg",
+                "Active GUS per-subject composition by individual protein (sums to 100%).",
+            ),
+            (
+                "figure6_clade_taxonomy_composition_active.svg",
+                "Active GUS abundance-weighted taxonomy composition by clade.",
+            ),
+        ]
+
     sankey_nodes_right = tax_labels_sorted
     sankey_svg = make_sankey_svg(
         sankey_links,
@@ -1250,6 +1395,16 @@ def build_report(args: argparse.Namespace) -> None:
         md.append("")
         md.append(cap)
         md.append("")
+    if active_figures:
+        md.append("## Active GUS figures")
+        md.append("")
+        md.append("Active GUS = the first 11 entries of Table S3. These figures mirror figures 3, 4 and 6 but are restricted to the active set.")
+        md.append("")
+        for fn, cap in active_figures:
+            md.append(f"![{cap}](figures/{fn})")
+            md.append("")
+            md.append(cap)
+            md.append("")
     (out / "report.md").write_text("\n".join(md), encoding="utf-8")
 
     html_parts = [
@@ -1307,6 +1462,22 @@ def build_report(args: argparse.Namespace) -> None:
                 "</div>",
             ]
         )
+    if active_figures:
+        html_parts.append('<div class="card">')
+        html_parts.append("<h2>Active GUS figures</h2>")
+        html_parts.append(
+            "<p class=\"small\">Active GUS = the first 11 entries of Table S3. These mirror figures 3, 4 and 6 but are restricted to the active set.</p>"
+        )
+        html_parts.append("</div>")
+        for fn, cap in active_figures:
+            html_parts.extend(
+                [
+                    '<div class="card">',
+                    f'<img class="figure" src="figures/{fn}" alt="{html.escape(cap)}" />',
+                    f"<p class=\"small\">{html.escape(cap)}</p>",
+                    "</div>",
+                ]
+            )
     html_parts.extend(["</div>", "</body>", "</html>"])
     (out / "index.html").write_text("\n".join(html_parts), encoding="utf-8")
 
@@ -1346,6 +1517,11 @@ def main() -> None:
         "--candidate-meta",
         type=Path,
         default=Path("results/reference/candidate_gus_metadata.taxonomy.tsv"),
+    )
+    parser.add_argument(
+        "--active-meta",
+        type=Path,
+        default=Path("results/reference/active_gus_metadata.taxonomy.tsv"),
     )
     parser.add_argument(
         "--output-dir",

@@ -47,7 +47,10 @@ slurm-*.out
 *.sbatch.o*
 
 # --- optional: paper supplements can be large; uncomment if needed ---
-# reference_from_paper/*.pdf
+reference_from_paper/
 # reference_from_paper/*.docx
+reviewer_questions.txt
 
 .cache/
+./snakemake/
+
