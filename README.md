@@ -17,9 +17,9 @@ The working analysis uses identity ≥ 95% and query/subject coverage ≥ 90% (`
 
 | Set | Source | Typical size |
 | --- | --- | --- |
-| **Total GUS** | Paper 279 GUS sequences plus FMN-binding GUS from Supplemental Table 2 | 279 + FMN |
-| **Candidate GUS** | Table S3 (18 experimentally discussed proteins) | 18 |
-| **Active GUS** | First 11 rows of Table S3 | 11 |
+| **Total GUS** | 279 GUS sequences are from Pollet et al, 2017. 129 FMN-binding GUS sequences are from Simpson et al, 2022 | 408 |
+| **Candidate GUS** | Table S3 (18 experimentally discussed proteins) from the preorint (Zhang et al, 2026)| 18 |
+| **Active GUS** | First 11 rows of Table S3 from the preprint (Zhang et al, 2026)| 11 |
 
 Active GUS IDs (Table S3 order):
 
@@ -243,3 +243,13 @@ cleandata/                  host-removed reads (gitignored)
 ```
 
 Large inputs and results (`rawdata/`, `cleandata/`, `assembly/`, `results/`, `envs/`) are gitignored and are recreated from the workflows above.
+
+References:
+
+Pollet RM, D'Agostino EH, Walton WG, Xu Y, Little MS, Biernat KA, Pellock SJ, Patterson LM, Creekmore BC, Isenberg HN, Bahethi RR, Bhatt AP, Liu J, Gharaibeh RZ, Redinbo MR. An Atlas of β-Glucuronidases in the Human Intestinal Microbiome. Structure. 2017 Jul 5;25(7):967-977.e5. doi: 10.1016/j.str.2017.05.003.
+
+Simpson, J. B., Sekela, J. J., Graboski, A. L., Borlandelli, V. B., Bivins, M. M., Barker, N. K., … Redinbo, Matthew. R. (2022). Metagenomics combined with activity-based proteomics point to gut bacterial enzymes that reactivate mycophenolate. Gut Microbes, 14(1). https://doi.org/10.1080/19490976.2022.2107289
+
+Guodong Zhang, Nan Jing, Guodong Cao et al. Gut Microbiota Mediate the Metabolism of Colonic Prostaglandins, 20 February 2026, PREPRINT (Version 1) available at Research Square [https://doi.org/10.21203/rs.3.rs-8856024/v1]
+
+Sarah E. Blecksmith, Karen M. Kalanetra, Cheng-Yu Weng, Christopher Suarez, Irnayuli R. Sitepu, Yirui Tang, Shawn Ehlers Cheang, Sophia Jiang, Karina Cernioglo, Karla Damian-Medina, Jennifer T. Smilowitz, Carlito B. Lebrilla, David A. Mills, Danielle G. Lemay; Fecal microbiomes from healthy adult consumers of fruits and vegetables exhibit fiber- and donor-specific fermentation: “5 a day” is not enough. Food Funct. 2025; 16 (19): 7561–7577. https://doi.org/10.1039/d5fo00947b
