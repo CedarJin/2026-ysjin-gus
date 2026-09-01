@@ -13,6 +13,8 @@ The working analysis uses identity ≥ 95% and query/subject coverage ≥ 90% (`
 | Sample IDs | `S` + NCBI **Sample Name** (for example `SRR18354890` → `S13`), from `reference_from_paper/SraRunTable.csv` |
 | Accession lists | `config/PRJNA816918_accessions.txt`, `config/PRJNA816918_runs.tsv` |
 
+Only 17 samples have enzymatic assay results, so the correlation analysis includes those 17 samples (S02 is excluded).
+
 ## GUS reference sets
 
 | Set | Source | Size |
