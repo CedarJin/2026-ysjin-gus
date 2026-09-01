@@ -15,17 +15,37 @@ The working analysis uses identity ≥ 95% and query/subject coverage ≥ 90% (`
 
 ## GUS reference sets
 
-| Set | Source | Typical size |
+| Set | Source | Size |
 | --- | --- | --- |
-| **Total GUS** | 279 GUS sequences are from Pollet et al, 2017. 129 FMN-binding GUS sequences are from Simpson et al, 2022 | 408 |
-| **Candidate GUS** | Table S3 (18 experimentally discussed proteins) from the preorint (Zhang et al, 2026)| 18 |
-| **Active GUS** | First 11 rows of Table S3 from the preprint (Zhang et al, 2026)| 11 |
+| **Total GUS** | Pollet et al. 2017 (279) + Simpson et al. 2022 sequences with `Loop_Class == FMN` (28). No ID overlap. | **307** |
+| **Candidate GUS** | Table S3 (18 experimentally discussed proteins) from the preprint (Zhang et al. 2026) | 18 |
+| **Active GUS** | First 11 rows of Table S3 from the preprint (Zhang et al. 2026) | 11 |
 
 Active GUS IDs (Table S3 order):
 
 `NP_416134.1` (E. coli), `WP_003467686.1` (C. perfringens), `6MVG_A` (R. gnavus), `WP_022501306` (Eubacterium), `WP_000966715` (S. agalactiae), `WP_012740861` (E. eligens), `3CMG_A` (B. fragilis), `6NCY_A` (F. saccharivorans), `WP_270534885` (B. mass), `WP_007841259` (B. dorei), `WP_217761416` (P. copri).
 
 Active abundance is computed by filtering candidate DIAMOND hits to those 11 IDs, then running the same summarize + TPM steps as total/candidate. That is equivalent to searching an 11-sequence database because the candidate search already kept up to 25 targets per query (`--max-target-seqs 25`).
+
+### Total GUS patch (279 + 28 FMN)
+
+The DIAMOND database (`results/reference/gus_279_plus_fmn.faa` / `.dmnd`) is still the original **408** sequences: Pollet 279 plus all 129 Simpson FMN-binding proteins. The search pipeline had labeled every Simpson sequence as clade `FMN`. In Simpson Supplemental Table 2 (`GUS_Summary`), true `Loop_Class` counts are No_Loop 42, **FMN 28**, Mini-Loop_1 22, Loop_2 14, Loop_1 9, NTL 7, Mini-Loop_2 7.
+
+Working total-GUS abundance (`pident95_cov90` merged matrices) was restricted to the **307**-sequence set **without re-running DIAMOND**:
+
+```bash
+python3 scripts/patch_total_gus_pollet279_fmn28.py
+```
+
+The patch:
+
+- Keeps Pollet 279 + Simpson `Loop_Class == FMN` (28).
+- Filters `results/summary/pident95_cov90/abundance_all_subject/total_gus_abundance_*.tsv`.
+- Renormalizes `tpm_gus_db` (each sample sums to 10<sup>6</sup>) and `within_gus_db_percent` (each sample sums to 100%).
+- Leaves genome-wide TPM and `of_genome_percent` values unchanged (the denominator is the full gene catalog).
+- Writes pre-patch copies to `results/summary/pident95_cov90/abundance_all_subject/_backup_before_pollet279_fmn28/`.
+
+At this filter, **123 / 307** references were detected (112 Pollet + 11 of 28 FMN). Re-run the patch after `merge_abundance_tables.py` if those matrices are regenerated. Candidate and active GUS tables are not patched.
 
 ## Pipeline
 
@@ -61,6 +81,7 @@ Default DIAMOND / summarize filters in the Snakefile are identity ≥ 40%, query
 bash scripts/regenerate_gus_abundance_pident.sh
 python3 scripts/compute_active_gus_abundance.py
 python3 scripts/merge_abundance_tables.py
+python3 scripts/patch_total_gus_pollet279_fmn28.py
 python3 scripts/build_gus_report.py
 ```
 
@@ -195,6 +216,8 @@ Each row is one predicted gene (best GUS hit) plus `raw_count`, `cds_length_bp`,
 
 Merged matrices, `results/summary/pident95_cov90/abundance_all_subject/`:
 
+`total_gus_*` matrices are the patched 307-sequence set (detected rows only). Clade is encoded in the `sseqid` suffix (Pollet `mL1mL2`, `mL1`, `mL2`, …), not a separate column.
+
 | File | Values |
 | --- | --- |
 | `*_gus_genome_all_subject.tsv` | genome-wide TPM by reference × sample |
@@ -223,6 +246,7 @@ sbatch scripts/submit_gus_abundance.sbatch
 bash scripts/regenerate_gus_abundance_pident.sh
 python3 scripts/compute_active_gus_abundance.py
 python3 scripts/merge_abundance_tables.py
+python3 scripts/patch_total_gus_pollet279_fmn28.py
 python3 scripts/build_gus_report.py
 ```
 
