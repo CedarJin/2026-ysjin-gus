@@ -1,0 +1,27 @@
+#!/usr/bin/env Rscript
+out <- 'results/summary/pident95_cov90/assay_order_stacked_rpkm'
+d <- read.delim(file.path(out, 'input_abundance.tsv'), check.names=FALSE, row.names=1)
+subjects <- c('S11','S19','S18','S09','S07','S15','S05','S03','S20','S16','S13','S04','S08','S14','S10','S17','S21')
+ids <- c('WP_022501306','6MVG_A','WP_012740861','WP_217761416','WP_007841259','6NCY_A','WP_270534885','3CMG_A')
+labels <- c('Eubacterium (FMN)','R. gnavus (FMN)','E. eligens (L1)','P. copri (L2)','B. dorei (NL)','F. saccharivorans (hybrid)','B. mass (mL1)','B. fragilis (mL1)')
+colors <- c('#66C2A5','#1B9E77','#FC8D62','#7570B3','#E7298A','#E6AB02','#A6CEE3','#1F78B4')
+stopifnot(setequal(rownames(d),ids), length(subjects)==17, !anyDuplicated(subjects), all(subjects %in% colnames(d)), setequal(setdiff(colnames(d),'S02'), subjects))
+m <- as.matrix(d[ids,subjects]);stopifnot(all(is.finite(m)),all(m>=0))
+write.table(data.frame(sseqid=rownames(m),m,check.names=FALSE),file.path(out,'plotted_abundance.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
+write.table(data.frame(subject=subjects,total_GUS_RPKM=colSums(m)),file.path(out,'subject_totals.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
+write.table(data.frame(sseqid=ids,label=labels,color=colors),file.path(out,'legend.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
+plot_one <- function(){
+ layout(matrix(c(1,2),1,2),widths=c(4.8,1.65))
+ par(mar=c(4.7,5.1,1.0,0.4),mgp=c(3,0.75,0),family='sans',las=1,cex.axis=1.0,cex.lab=1.15,bty='l',xaxs='i',yaxs='i')
+ bx <- barplot(m,space=0.32,col=colors,border=NA,axes=FALSE,axisnames=FALSE,ylim=c(0,50),ylab='GUS abundance in RPKM',xlab='Subject')
+ axis(2,at=seq(0,50,10),lwd=0,lwd.ticks=0.9,tck=-0.015)
+ axis(1,at=bx,labels=subjects,lwd=0,lwd.ticks=0,tick=FALSE,cex.axis=0.92)
+ box(bty='l',lwd=1)
+ par(mar=c(4.7,0.5,1.0,0.1));plot.new();legend('left',legend=labels,fill=colors,border=NA,bty='n',title='GUS',cex=0.98,y.intersp=1.5,x.intersp=0.65)
+}
+stem <- file.path(out,'gus_abundance_stacked_assay_order')
+png(paste0(stem,'.png'),width=3000,height=1250,res=250,type='cairo');plot_one();dev.off()
+cairo_pdf(paste0(stem,'.pdf'),width=12,height=5);plot_one();dev.off()
+svg(paste0(stem,'.svg'),width=12,height=5);plot_one();dev.off()
+writeLines(c('Source: user-attached active_gus_abundance_gus_genome_all_subject_sample_id.tsv, copied unchanged as input_abundance.tsv.', 'Values are RPKM; verified byte-for-byte against the project RPKM matrix. No renormalization or transformation.', 'Order and labels verified against panel b in word/media/image2.png of Yanshan_results.docx. Both incubation panels have the same order.',paste('Order:',paste(subjects,collapse=', ')),'S02 excluded: no enzymatic assay. Control not included: no metagenomic abundance.','Stack height is the sum of eight detected reference-GUS rows in the provided active-GUS matrix, not the full total-GUS reference database.','Colors match the existing figure4b palette. Three undetected active references are not shown in the legend.'),file.path(out,'figure_notes.txt'))
+print(data.frame(subject=subjects,total=colSums(m)))
