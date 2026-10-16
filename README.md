@@ -43,7 +43,7 @@ Paired-end reads
   → featureCounts read counts for predicted CDS
   → DIAMOND protein hits restricted to the 11 active GUS references
   → identity/coverage filtering and one best hit per predicted gene
-  → Abundance calculation
+  → Abundance calculation (RPKM)
 ```
 
 Active hits are extracted from the existing protein-search results. Filtering uses amino-acid identity ≥95%, alignment length / query length ≥90%, alignment length / reference length ≥90%, and e-value ≤1e-5. Among passing active-reference hits, the highest-bitscore hit is retained for each predicted gene to avoid counting the same CDS more than once.
