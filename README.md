@@ -1,6 +1,6 @@
 # Active GUS abundance in human stool metagenomes
 
-This project quantifies genes matching the **active β-glucuronidase (GUS) reference set** in 18 human stool metagenomes from BioProject PRJNA816918. Active GUS abundance is reported as **RPKM: reads per kilobase of coding sequence per million mapped reads**.
+This project quantifies genes matching the **active β-glucuronidase (GUS) reference set** in 18 human stool metagenomes from BioProject PRJNA816918. 
 
 The working analysis requires **≥95% amino-acid identity and ≥90% query and reference coverage** (`pident95_cov90`). A match identifies a homolog of an experimentally active reference protein; it does not establish that the sample-derived protein has the same activity.
 
@@ -43,56 +43,12 @@ Paired-end reads
   → featureCounts read counts for predicted CDS
   → DIAMOND protein hits restricted to the 11 active GUS references
   → identity/coverage filtering and one best hit per predicted gene
-  → CDS-level RPKM
-  → summed RPKM per active GUS reference and subject
+  → Abundance calculation
 ```
 
 Active hits are extracted from the existing protein-search results. Filtering uses amino-acid identity ≥95%, alignment length / query length ≥90%, alignment length / reference length ≥90%, and e-value ≤1e-5. Among passing active-reference hits, the highest-bitscore hit is retained for each predicted gene to avoid counting the same CDS more than once.
 
 The shared preprocessing and mapping workflow is in `scripts/cleandata.smk`, `scripts/assemble_megahit_cleandata.smk`, and `scripts/gus_abundance.smk`. Active-reference extraction is implemented in `scripts/compute_active_gus_abundance.py`.
-
-## RPKM calculation
-
-For each detected active GUS coding sequence *g* in sample *s*:
-
-```math
-\mathrm{RPKM}_{g,s} = \frac{\mathrm{read\ count}_{g,s} \times 10^9}{\mathrm{CDS\ length}_{g}\;(\mathrm{bp}) \times \mathrm{mapped\ reads}_{s}}
-```
-
-The calculation uses:
-
-- **Read count:** the original featureCounts v2.1.1 count for the CDS. The run used `-p -B -C -t CDS -g ID` without `--countReadPairs`, so these are individual-read counts, not fragment counts.
-- **Length:** nucleotide CDS length from featureCounts, checked against the existing CDS-length records. Protein length in amino acids is not used for RPKM normalization.
-- **Mapped reads:** all reads mapped to that sample's assembly, derived consistently from the Bowtie2 log as twice the input pair count minus unaligned individual mates. This includes mapped reads that were not assigned to a CDS.
-
-The denominator is not the sum of active GUS counts or the number of reads assigned to genes. featureCounts summary totals are retained for auditing; the normalization denominator comes from Bowtie2.
-
-Unrounded CDS-level RPKM values are summed for genes assigned to the same reference, then written to the matrix with six decimal places. A subject's **summed active GUS abundance** is the sum across the detected active references. The matrix is not renormalized to a fixed column sum, and RPKM is not a percentage of the genome.
-
-## Active GUS output files
-
-The current RPKM outputs are under:
-
-```text
-results/summary/pident95_cov90/abundance_all_subject/
-```
-
-| File | Contents |
-| --- | --- |
-| `active_gus_abundance_gus_genome_all_subject_sample_id.tsv` | Active GUS reference × subject matrix, in **RPKM**; 8 detected references × 18 subjects |
-| `active_gus_rpkm_gene_details.tsv` | CDS-level raw counts, nucleotide lengths, mapped-read denominators, and RPKM |
-| `active_gus_rpkm_library_sizes.tsv` | Per-subject library sizes and normalization audit |
-| `active_gus_rpkm_methods.txt` | Calculation details and provenance |
-
-The `gus_genome` portion of the matrix filename is retained for compatibility; **the values in this specific matrix are RPKM**. Other legacy abundance tables and figures were not converted with this matrix and should not be assumed to use RPKM. Regenerating older merged tables can overwrite this file, so the mapped-read RPKM calculation must be applied again before downstream use.
-
-For stacked abundance plots, use subject on the x-axis, **GUS abundance in RPKM** on the y-axis, and a separate color for each detected active GUS reference. Assay comparisons use the 17-subject order above.
-
-## Interpretation
-
-These abundances measure metagenomic DNA representation, not protein expression or catalytic activity. Matching the same reference does not guarantee identical sample-derived protein sequences, and an individual reference's abundance cannot be equated with whole-sample enzymatic activity.
-
-Comparisons to the enzymatic assay should distinguish original measurements from values estimated from a figure. Sequence substitutions, predicted truncations, and reference expression tags also require separate interpretation before proposing functional effects.
 
 ## Repository layout
 
